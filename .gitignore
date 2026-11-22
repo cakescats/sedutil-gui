@@ -1,0 +1,8 @@
+# build output and files CI generates
+src-tauri/target/
+src-tauri/gen/
+src-tauri/icons/
+src-tauri/binaries/
+dev/preview.html
+# sedutil-pba checked out by CI
+sedutil-pba/

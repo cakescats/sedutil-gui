@@ -1,0 +1,101 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths-ignore: ['**.md']
+  pull_request:
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  msi:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: sedutil-pba commit
+        id: sedutil
+        shell: bash
+        run: echo "ref=$(tr -d ' \r\n' < SEDUTIL_REF)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: cakescats/sedutil-pba
+          ref: ${{ steps.sedutil.outputs.ref }}
+          path: sedutil-pba
+          fetch-depth: 0  # for the version string
+
+      # sedutil-cli.exe, built the same way as in sedutil-pba's CI
+      - uses: microsoft/setup-msbuild@v2
+      - name: sedutil-cli version header
+        shell: bash
+        working-directory: sedutil-pba
+        run: |
+          if ver=$(git describe --tags --match 'v*' 2>/dev/null); then
+            ver=${ver#v}
+          else
+            ver="$(cat VERSION)+g$(git rev-parse --short HEAD)"
+          fi
+          echo "#define GIT_VERSION \"$ver\"" > windows/Version.h
+      - name: Build sedutil-cli.exe
+        working-directory: sedutil-pba
+        run: >
+          msbuild windows\CLI\CLI.sln /m /p:Configuration=Release /p:Platform=x64
+          /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0
+          /p:PreBuildEventUseInBuild=false
+      - name: Check sedutil-cli.exe and bundle it
+        shell: bash
+        run: |
+          exe=$(find sedutil-pba/windows -name sedutil-cli.exe -path '*Release*' | head -n 1)
+          "$exe" --validatePBKDF2 | tee pbkdf2.log | tail -n 1
+          grep -q 'validation suite ... passed' pbkdf2.log
+          # the JSON mode the GUI uses, on the runner's own disks
+          "$exe" -j --scan > scan.json
+          python -c "import json; d = json.load(open('scan.json')); print(d['status'], [x['path'] for x in d['devices']]); assert d['ok']"
+          mkdir -p src-tauri/binaries
+          cp "$exe" src-tauri/binaries/sedutil-cli-x86_64-pc-windows-msvc.exe
+
+      # the GUI
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - name: Icons from the logo
+        shell: bash
+        run: npx --yes @tauri-apps/cli@2 icon icon-source.png -o src-tauri/icons
+      - name: Build the MSI
+        shell: bash
+        run: npx --yes @tauri-apps/cli@2 build
+      - name: Collect
+        shell: bash
+        run: |
+          mkdir msi
+          cp src-tauri/target/release/bundle/msi/*.msi msi/
+          (cd msi && sha256sum *.msi > SHA256SUMS)
+          ls -l msi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cakes-drives-windows-msi
+          path: msi/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: msi
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: cakes-drives-windows-msi
+          path: msi
+      # a draft: it is published by hand after testing
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: msi/*
