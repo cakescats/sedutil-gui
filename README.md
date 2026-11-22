@@ -15,8 +15,11 @@ reverts and PSID revert stay on the command line for now.
 ## Download
 
 Builds of `main` are in the artifacts of the
-[build workflow](../../actions/workflows/build.yml) (`cakes-drives-windows-msi`).
-A tag `v*` makes a draft release with the MSI.
+[build workflow](../../actions/workflows/build.yml): `cakes-drives-windows-msi`,
+and `pba-image` with the boot image for "Write PBA image" (`*-default.img`
+for most people, `*-hardened.img` without the service shell). The images also
+come with every [sedutil-pba release](https://github.com/cakescats/sedutil-pba/releases/latest).
+A tag `v*` makes a draft release with the MSI and the images.
 
 The MSI is not signed yet, so SmartScreen warns: More info → Run anyway.
 

@@ -83,9 +83,29 @@ jobs:
           name: cakes-drives-windows-msi
           path: msi/
 
+  # the boot image the GUI writes with "Write PBA image", from a sedutil-pba release
+  pba-image:
+    runs-on: ubuntu-24.04
+    env:
+      PBA_RELEASE: v1.20.0-cakes.2
+    steps:
+      - name: Download and check the PBA images
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir pba && cd pba
+          gh release download "$PBA_RELEASE" --repo cakescats/sedutil-pba \
+            --pattern '*.img' --pattern '*.img.sha256'
+          sha256sum -c --ignore-missing *.img.sha256
+          ls -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pba-image
+          path: pba/
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: msi
+    needs: [msi, pba-image]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -94,8 +114,14 @@ jobs:
         with:
           name: cakes-drives-windows-msi
           path: msi
+      - uses: actions/download-artifact@v4
+        with:
+          name: pba-image
+          path: pba
       # a draft: it is published by hand after testing
       - uses: softprops/action-gh-release@v2
         with:
           draft: true
-          files: msi/*
+          files: |
+            msi/*
+            pba/*
