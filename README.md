@@ -4,7 +4,7 @@ A Windows program for self-encrypting drives (TCG Opal): see their state,
 unlock and lock them, open locking ranges, change the Admin1 password and
 write the PBA image. It is a window over `sedutil-cli` from
 [cakescats/sedutil-pba](https://github.com/cakescats/sedutil-pba), run with
-`-j -S` ([format](https://github.com/cakescats/sedutil-pba/blob/4f5f43fa2568ee6a8b52197d3a575c86ec44bbe2/docs/json.md)):
+`-j -S` ([format](https://github.com/cakescats/sedutil-pba/blob/56311260ba2a30bcbc406d2e039a7c345cf26399/docs/json.md)):
 the result comes back as JSON, and passwords go through a pipe instead of
 the command line, so they never show up in the process list.
 

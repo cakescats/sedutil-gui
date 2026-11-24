@@ -54,7 +54,7 @@ jobs:
           grep -q 'validation suite ... passed' pbkdf2.log
           # the JSON mode the GUI uses, on the runner's own disks
           "$exe" -j --scan > scan.json
-          python -c "import json; d = json.load(open('scan.json')); print(d['status'], [x['path'] for x in d['devices']]); assert d['ok']"
+          python -c "import json; d = json.load(open('scan.json')); print(d['status']); [print(x['path'], x.get('interface'), repr(x.get('serial')), x.get('model')) for x in d['devices']]; assert d['ok']"
           mkdir -p src-tauri/binaries
           cp "$exe" src-tauri/binaries/sedutil-cli-x86_64-pc-windows-msvc.exe
 

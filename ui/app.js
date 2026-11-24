@@ -16,6 +16,7 @@ const TEXT = {
     notSetUpNote: 'Encryption is not turned on for this drive. Setting it up is done from the command line in this version:',
     lockedNote: 'The drive or a part of it is locked: the system cannot read that data until it is unlocked.',
     mbrNote: 'The drive shows the PBA to the system in place of its data (shadow MBR). Unlocking here also switches that off until the next power cycle.',
+    noSerial: 'sedutil-cli did not read the serial number of this drive. It is the salt of the password hash, so passwords set in the PBA or in Linux will be refused. Update the program; if this stays, send the command log.',
     systemNote: 'Windows runs from this drive, so locking it is not offered here: the system would stop at once.',
     f_path: 'Device', f_interface: 'Interface', f_serial: 'Serial number', f_firmware: 'Firmware',
     f_ssc: 'Standard', f_owner: 'Owner (SID)', f_pba: 'PBA (shadow MBR)', f_block: 'Logical block',
@@ -76,6 +77,7 @@ const TEXT = {
     notSetUpNote: 'Шифрование на этом диске не включено. В этой версии настройка делается из командной строки:',
     lockedNote: 'Диск или его часть заблокированы: система не может читать эти данные, пока их не разблокировать.',
     mbrNote: 'Диск показывает системе PBA вместо данных (теневой MBR). Разблокировка здесь выключает это до следующего выключения питания.',
+    noSerial: 'sedutil-cli не прочитал серийный номер диска. Он служит солью хеша пароля, поэтому пароли, заданные в PBA или в Linux, будут отвергнуты. Обновите программу; если не поможет, пришлите журнал команд.',
     systemNote: 'С этого диска работает Windows, поэтому блокировать его здесь нельзя: система сразу остановится.',
     f_path: 'Устройство', f_interface: 'Интерфейс', f_serial: 'Серийный номер', f_firmware: 'Прошивка',
     f_ssc: 'Стандарт', f_owner: 'Владелец (SID)', f_pba: 'PBA (теневой MBR)', f_block: 'Логический блок',
@@ -338,6 +340,7 @@ function renderDetail() {
     box.append(el('div', { class: 'note' }, el('p', { text: t('notSetUpNote') }),
       el('code', { class: 'cmd', text: 'sedutil-cli -S --initialSetup - ' + d.path })));
   }
+  if (d.sed && !d.serial) box.append(note(t('noSerial'), 'warn'));
   if (s.key === 'locked') box.append(note(t('lockedNote'), 'warn'));
   if (d.locking && d.locking.enabled && d.locking.mbrEnabled && !d.locking.mbrDone) box.append(note(t('mbrNote')));
 
