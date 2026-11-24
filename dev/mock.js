@@ -98,6 +98,15 @@
         if (cmd === 'sedutil') return sedutil(args);
         if (cmd === 'pick_image') return 'C:\\Users\\me\\Downloads\\cakes-pba-UEFI64.img';
         if (cmd === 'cli_info') return { path: 'C:\\Program Files\\CakesCats Drives\\sedutil-cli.exe', found: true };
+        if (cmd === 'disk_map') {
+          await sleep(200);
+          return [
+            { number: 0, size: 1000204886016, system: true, bus: 'NVMe', letters: ['C:'] },
+            { number: 1, size: 1024209543168, system: false, bus: 'NVMe', letters: [] },
+            { number: 2, size: 2000398934016, system: false, bus: 'SATA', letters: ['D:', 'E:'] },
+            { number: 3, size: 1000204886016, system: false, bus: 'SATA', letters: ['F:'] },
+          ];
+        }
         throw new Error('unknown command ' + cmd);
       },
     },

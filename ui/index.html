@@ -24,19 +24,20 @@
   <main class="layout">
     <aside class="drives">
       <div class="drives-head" data-t="drives"></div>
-      <ul id="driveList" class="drive-list"></ul>
+      <ul id="driveList" class="drive-list" role="listbox" aria-label="Drives"></ul>
       <p id="scanNote" class="muted small"></p>
     </aside>
-    <section id="detail" class="detail"></section>
+    <section id="detail" class="detail" aria-live="polite"></section>
   </main>
 
   <details id="logBox" class="log">
-    <summary><span data-t="log"></span> <span id="logStatus" class="small muted"></span></summary>
+    <summary><span data-t="log"></span> <span id="logStatus" class="small muted"></span>
+      <button type="button" id="copyLog" class="btn ghost small-btn" data-t="copy"></button></summary>
     <pre id="logText"></pre>
   </details>
 
   <div id="busy" class="busy" hidden>
-    <div class="busy-card">
+    <div class="busy-card" role="status" aria-live="polite">
       <div class="spinner"></div>
       <div id="busyText"></div>
       <div id="progressWrap" class="progress" hidden><div id="progressBar"></div></div>

@@ -163,6 +163,49 @@ async fn pick_image() -> Option<String> {
     .flatten()
 }
 
+/// What Windows knows about each disk: number (N of \\.\PhysicalDriveN),
+/// size, drive letters and whether Windows boots or runs from it. The page
+/// shows this next to the drive and refuses to lock the system disk.
+/// An empty list where this is not available.
+#[tauri::command]
+async fn disk_map() -> Value {
+    tauri::async_runtime::spawn_blocking(read_disk_map)
+        .await
+        .unwrap_or_else(|_| json!([]))
+}
+
+#[cfg(windows)]
+fn read_disk_map() -> Value {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    const SCRIPT: &str = "$ErrorActionPreference = 'SilentlyContinue'; \
+        $d = @(Get-Disk | ForEach-Object { [pscustomobject]@{ \
+          number = [int]$_.Number; size = [uint64]$_.Size; \
+          system = [bool]($_.IsSystem -or $_.IsBoot); bus = [string]$_.BusType; \
+          letters = @(Get-Partition -DiskNumber $_.Number | \
+            Where-Object { [string]$_.DriveLetter -match '^[A-Za-z]$' } | \
+            ForEach-Object { [string]$_.DriveLetter + ':' }) } }); \
+        ConvertTo-Json -InputObject $d -Depth 3 -Compress";
+    let out = Command::new("powershell.exe")
+        .args(["-NoProfile", "-NonInteractive", "-Command", SCRIPT])
+        .stdin(Stdio::null())
+        .stderr(Stdio::null())
+        .creation_flags(CREATE_NO_WINDOW)
+        .output();
+    match out {
+        Ok(o) => serde_json::from_slice::<Value>(&o.stdout)
+            .ok()
+            .filter(Value::is_array)
+            .unwrap_or_else(|| json!([])),
+        Err(_) => json!([]),
+    }
+}
+
+#[cfg(not(windows))]
+fn read_disk_map() -> Value {
+    json!([])
+}
+
 /// Where sedutil-cli is expected and whether it is there
 #[tauri::command]
 fn cli_info() -> Value {
@@ -174,7 +217,7 @@ fn cli_info() -> Value {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![sedutil, pick_image, cli_info])
+        .invoke_handler(tauri::generate_handler![sedutil, pick_image, cli_info, disk_map])
         .run(tauri::generate_context!())
         .expect("error while running the application");
 }
